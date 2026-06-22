@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hlasový kuchyňský asistent</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Horní lišta ------------------------------------------------------- -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo">🍳</span>
+      <div class="brand-text">
+        <h1>Kuchyňský asistent</h1>
+        <span class="brand-sub">hlasový průvodce recepty</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span id="conn-status" class="conn-status" title="Stav připojení">
+        <span class="conn-dot"></span><span id="conn-label">připojuji…</span>
+      </span>
+      <button id="btn-upload" class="btn btn-primary">＋ Nahrát recept</button>
+      <button id="btn-reset" class="btn btn-ghost" title="Vymazat konverzaci">↺</button>
+    </div>
+  </header>
+
+  <!-- Hlavní plocha ----------------------------------------------------- -->
+  <main class="layout">
+
+    <!-- Panel s receptem -->
+    <aside id="recipe-panel" class="recipe-panel empty">
+      <div class="recipe-empty">
+        <div class="recipe-empty-icon">📖</div>
+        <p>Zatím žádný recept.</p>
+        <button id="btn-upload-2" class="btn btn-primary">Nahrát recept</button>
+      </div>
+
+      <div class="recipe-content" hidden>
+        <h2 id="recipe-title">Recept</h2>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+          <span id="progress-label" class="progress-label">krok 0 / 0</span>
+        </div>
+
+        <section class="recipe-section">
+          <h3>Suroviny</h3>
+          <ul id="ingredient-list" class="ingredient-list"></ul>
+        </section>
+
+        <section class="recipe-section">
+          <h3>Postup</h3>
+          <ol id="step-list" class="step-list"></ol>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Chat -->
+    <section class="chat">
+      <div id="messages" class="messages"></div>
+
+      <div class="composer">
+        <button id="btn-voice" class="btn-mic" title="Hlasový režim">🎤</button>
+        <textarea id="input" class="composer-input" rows="1"
+                  placeholder="Napište zprávu nebo se zeptejte na recept…"></textarea>
+        <button id="btn-send" class="btn-send" title="Odeslat">➤</button>
+      </div>
+      <div id="status-chip" class="status-chip" hidden></div>
+    </section>
+  </main>
+
+  <!-- Modal pro nahrání receptu ---------------------------------------- -->
+  <div id="upload-modal" class="modal-backdrop" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Nahrát recept</h2>
+        <button id="modal-close" class="btn-icon">✕</button>
+      </div>
+      <p class="modal-hint">Vložte text receptu (suroviny i postup), nebo nahrajte textový soubor.</p>
+      <textarea id="recipe-input" class="recipe-input"
+                placeholder="Např.:&#10;Palačinky&#10;&#10;Suroviny:&#10;2 vejce, 250 g mouky, 500 ml mléka, špetka soli&#10;&#10;Postup:&#10;Smíchejte mouku s mlékem a vejci. Osolte. Na pánvi rozpalte trochu oleje. Smažte tenké placky z obou stran."></textarea>
+      <div class="modal-row">
+        <label class="btn btn-ghost file-label">
+          📎 Vybrat soubor<input type="file" id="recipe-file" accept=".txt,.md,text/plain" hidden>
+        </label>
+        <div class="sample-buttons">
+          <span class="sample-label">Ukázky:</span>
+          <button class="chip sample" data-file="palacinky.txt">Palačinky</button>
+          <button class="chip sample" data-file="svickova.txt">Svíčková</button>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="modal-cancel" class="btn btn-ghost">Zrušit</button>
+        <button id="modal-submit" class="btn btn-primary">Načíst recept</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hlasový režim (overlay) ------------------------------------------ -->
+  <div id="voice-overlay" class="voice-overlay" hidden>
+    <button id="voice-close" class="btn-icon voice-close">✕</button>
+    <div class="voice-stage">
+      <div id="voice-orb" class="voice-orb">
+        <div class="orb-core">🎙️</div>
+      </div>
+      <div id="voice-state" class="voice-state">Připojuji…</div>
+      <div id="voice-caption" class="voice-caption"></div>
+    </div>
+    <div id="voice-log" class="voice-log"></div>
+    <div class="voice-controls">
+      <button id="voice-toggle" class="btn btn-primary btn-lg">Pozastavit poslech</button>
+    </div>
+  </div>
+
+  <audio id="audioout"></audio>
+
+  <!-- Knihovny SpeechCloud (poslouchání + mluvení) --------------------- -->
+  <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script src="https://speechcloud.kky.zcu.cz:9444/speechcloud-3.0.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

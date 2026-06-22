@@ -1,0 +1,496 @@
+% =====================================================================
+%  Semestrální práce – předmět Hlasové dialogové systémy (HDS)
+%  Hlasový kuchyňský asistent
+%
+%  Překlad:  pdflatex dokumentace.tex   (2x kvůli obsahu a odkazům)
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+
+% --- Barvy ----------------------------------------------------------
+\definecolor{accent}{RGB}{232,93,42}
+\definecolor{codebg}{RGB}{248,247,243}
+\definecolor{codekw}{RGB}{0,92,197}
+\definecolor{codecom}{RGB}{106,115,89}
+\definecolor{codestr}{RGB}{163,21,69}
+
+% --- Nastavení výpisů kódu (vč. českých znaků v komentářích) ---------
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  inputencoding=utf8,
+  extendedchars=true,
+  literate=%
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ý}{{\'y}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ý}{{\'Y}}1
+    {č}{{\v c}}1 {ď}{{\v d}}1 {ě}{{\v e}}1 {ň}{{\v n}}1 {ř}{{\v r}}1
+    {š}{{\v s}}1 {ť}{{\v t}}1 {ž}{{\v z}}1 {ů}{{\r u}}1
+    {Č}{{\v C}}1 {Ď}{{\v D}}1 {Ě}{{\v E}}1 {Ň}{{\v N}}1 {Ř}{{\v R}}1
+    {Š}{{\v S}}1 {Ť}{{\v T}}1 {Ž}{{\v Z}}1 {Ů}{{\r U}}1
+}
+
+% --- Záhlaví/zápatí --------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Hlasový kuchyňský asistent}
+\rhead{\small Hlasové dialogové systémy}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% =====================================================================
+%  Titulní strana
+% =====================================================================
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Large\scshape Západočeská univerzita v Plzni\par}
+{\large Fakulta aplikovaných věd\par}
+\vspace{0.4cm}
+{\large Předmět: Hlasové dialogové systémy (HDS)\par}
+\vfill
+{\color{accent}\rule{\linewidth}{1.4pt}}\par
+\vspace{0.6cm}
+{\Huge\bfseries Hlasový kuchyňský asistent\par}
+\vspace{0.4cm}
+{\large Hlasový dialogový systém pro provádění uživatele receptem\\ na bázi LLM (Ollama), RAG a SpeechCloud\par}
+\vspace{0.6cm}
+{\color{accent}\rule{\linewidth}{1.4pt}}\par
+\vfill
+{\large\bfseries Semestrální práce\par}
+\vspace{2cm}
+\begin{flushright}
+\large
+\textbf{Autor:} David Král\\
+\textbf{E-mail:} davidkral03@gmail.com\\
+\textbf{Akademický rok:} 2025/2026
+\end{flushright}
+\vspace{1cm}
+{\large \today\par}
+\end{titlepage}
+
+% =====================================================================
+%  Anotace + obsah
+% =====================================================================
+\begin{abstract}
+\noindent
+Tato práce popisuje návrh a implementaci \textbf{hlasového kuchyňského asistenta} --
+webové aplikace, která uživatele interaktivně provede vybraným receptem krok za
+krokem. Uživatel nahraje libovolný recept v textové podobě; systém ho automaticky
+rozloží na suroviny a jednotlivé kroky, uloží do vyhledávací (RAG) databáze a poté
+ho receptem provází. Aplikace umožňuje ovládání jak \emph{psaním} v chatu, tak
+\emph{hlasem} -- s rozpoznáváním řeči (ASR) a syntézou řeči (TTS) zajišťovanými
+platformou SpeechCloud. Porozumění a generování odpovědí obstarává velký jazykový
+model provozovaný přes Ollamu. Klíčovou vlastností je \textbf{deterministické sledování
+postupu}: aplikace si v kódu drží, ve kterém kroku se uživatel nachází, takže se ve
+vaření nikdy neztratí. Uživatelské rozhraní je inspirováno moderními konverzačními
+asistenty -- nabízí klasický chat s možností přepnutí do plnohodnotného hlasového
+režimu s přehledem konverzace.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Úvod}
+% =====================================================================
+Vaření podle receptu na obrazovce má praktická úskalí: ruce má člověk zaměstnané
+a často špinavé, displej zhasíná a v dlouhém textu se snadno ztratí orientace,
+ve kterém kroku se právě nachází. Hlasové dialogové systémy nabízejí přirozené
+řešení -- uživatel může s aplikací mluvit a poslouchat ji, aniž by se musel
+dotýkat zařízení.
+
+Cílem této semestrální práce bylo navrhnout a implementovat hlasového asistenta,
+který:
+\begin{itemize}[noitemsep]
+  \item přijme od uživatele libovolný recept (vložený text nebo soubor),
+  \item automaticky z něj vytěží suroviny a posloupnost kroků,
+  \item uloží recept do RAG databáze a umí odpovídat na dotazy k němu,
+  \item provází uživatele krokem za krokem a \emph{nikdy se v krocích neztratí},
+  \item umí poslouchat (ASR) i mluvit (TTS),
+  \item nabízí příjemné moderní rozhraní s chatem i hlasovým režimem.
+\end{itemize}
+
+Práce navazuje na příklady probírané v předmětu (framework SpeechCloud pro řízení
+dialogu, připojení k Ollamě a ukázka RAG) a spojuje je do jedné funkční aplikace.
+
+% =====================================================================
+\section{Zadání a požadavky}
+% =====================================================================
+Funkční požadavky na systém lze shrnout takto:
+\begin{enumerate}[noitemsep]
+  \item \textbf{Nahrání receptu} -- uživatel vloží text receptu (suroviny i postup).
+  \item \textbf{Strukturalizace} -- systém recept rozdělí na suroviny a kroky.
+  \item \textbf{RAG} -- recept se uloží do vyhledávací databáze pro zodpovídání dotazů.
+  \item \textbf{Provázení krok za krokem} -- s udržením aktuální pozice v postupu.
+  \item \textbf{Dva režimy ovládání} -- textový chat a hlasové ovládání.
+  \item \textbf{Hlasový vstup/výstup} -- rozpoznávání a syntéza řeči.
+  \item \textbf{Robustnost} -- model se nesmí v krocích ztratit ani přeskakovat.
+\end{enumerate}
+
+Nefunkční požadavky: srozumitelné a vizuálně příjemné rozhraní, odezva v reálném
+čase, odpovědi v češtině a snadné spuštění.
+
+% =====================================================================
+\section{Teoretický základ}
+% =====================================================================
+
+\subsection{Hlasové dialogové systémy}
+Hlasový dialogový systém (HDS) je systém, který s uživatelem komunikuje v přirozeném
+jazyce pomocí řeči. Typicky se skládá z rozpoznávače řeči (ASR -- Automatic Speech
+Recognition), porozumění (NLU/SLU), řízení dialogu (Dialog Management), generování
+odpovědi (NLG) a syntézy řeči (TTS -- Text-to-Speech). V této práci roli NLU i NLG
+přebírá velký jazykový model, řízení dialogu zajišťuje vlastní logika v kombinaci
+s LLM a ASR/TTS poskytuje SpeechCloud.
+
+\subsection{Rozpoznávání a syntéza řeči -- SpeechCloud}
+\textbf{SpeechCloud} je platforma Katedry kybernetiky ZČU poskytující ASR a TTS jako
+službu. V prohlížeči běží klient (\texttt{speechcloud-3.0.js}), který přes WebRTC/SIP
+zachytává zvuk z mikrofonu a přehrává syntetizovanou řeč. Serverová část dialogu se
+SpeechCloudem komunikuje přes WebSocket pomocí frameworku \texttt{dialog.py}, který
+nabízí pohodlné metody jako \texttt{synthesize\_and\_wait()} (řekni a počkej) nebo
+\texttt{recognize\_and\_wait\_for\_asr\_result()} (poslouchej a vrať rozpoznaný text).
+
+\subsection{Velké jazykové modely a Ollama}
+\textbf{Ollama} je server pro provoz velkých jazykových modelů (LLM). V práci je využit
+model \texttt{gemma3:12b} pro porozumění a generování odpovědí v češtině a dedikovaný
+model \texttt{qwen3-embedding} pro výpočet embeddingů. Důležitou schopností je
+\emph{strukturovaný výstup}: modelu lze předat JSON schéma a vynutit, aby odpověď
+přesně odpovídala dané struktuře. Toho práce využívá pro spolehlivé parsování receptu
+i pro klasifikaci záměru uživatele.
+
+\subsection{Retrieval-Augmented Generation (RAG)}
+RAG kombinuje vyhledávání v dokumentech s generováním odpovědí. Dokument (zde recept)
+se rozdělí na úseky, pro každý se spočítá \emph{embedding} (číselný vektor zachycující
+význam) a uloží do databáze. Při dotazu se spočítá embedding dotazu a kosinovou
+podobností se najdou nejrelevantnější úseky, které se předají LLM jako kontext.
+Model tak odpovídá na základě konkrétního receptu, nikoli jen z obecné znalosti.
+
+\subsection{Řízení dialogu a sledování stavu}
+Spoléhat při krokování receptu výhradně na LLM je rizikové -- model může krok
+přeskočit, zopakovat nebo „zapomenout``, kde se nachází. Práce proto odděluje
+\emph{rozhodnutí o záměru} (co uživatel chce) od \emph{provedení navigace}. Záměr
+určuje LLM (případně rychlá pravidla), ale samotný posun v krocích je čistě
+deterministická operace nad explicitně drženým stavem. Tím je vyloučeno, že by se
+asistent v postupu ztratil.
+
+% =====================================================================
+\section{Architektura systému}
+% =====================================================================
+Systém má dvě hlavní části: \textbf{frontend} (běží v prohlížeči) a \textbf{backend}
+(server v Pythonu nad frameworkem Tornado). Frontend přes SpeechCloud zajišťuje
+mikrofon a reproduktor a přes WebSocket komunikuje s dialogovým manažerem na serveru.
+Backend řídí dialog, volá Ollamu (LLM + embeddingy) a spravuje RAG i stav postupu.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw,rounded corners,align=center,minimum height=1cm,inner sep=5pt,fill=white},
+  acc/.style={draw=accent,line width=1pt},
+  arr/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[box,acc] (chat) {Chat + Hlasový režim\\\scriptsize (HTML/CSS/JS)};
+\node[box,below=0.7cm of chat] (sc) {SpeechCloud klient\\\scriptsize mikrofon / reproduktor};
+\node[box,acc,right=3.2cm of chat] (dm) {Dialogový manažer\\\scriptsize KitchenDialog (Tornado)};
+\node[box,below=0.7cm of dm] (state) {RecipeState\\\scriptsize sledování kroku};
+\node[box,right=2.6cm of dm] (llm) {Ollama\\\scriptsize LLM + embeddingy};
+\node[box,below=0.7cm of llm] (rag) {RecipeRAG\\\scriptsize vektorové vyhledávání};
+
+\draw[arr] (chat) -- node[above]{\scriptsize WS /ws} (dm);
+\draw[arr] (dm) -- (chat);
+\draw[arr] (sc) -- node[below,sloped]{\scriptsize ASR/TTS} ($(dm.south west)+(0,-0.1)$);
+\draw[arr] (dm) -- (llm);
+\draw[arr] (llm) -- (dm);
+\draw[arr] (dm) -- (state);
+\draw[arr] (dm) -- (rag);
+\draw[arr] (rag) -- (llm);
+\end{tikzpicture}
+\caption{Zjednodušené schéma architektury systému.}
+\label{fig:arch}
+\end{figure}
+
+\paragraph{Komunikace frontend $\leftrightarrow$ backend.}
+Probíhá obecným kanálem SpeechCloud. Frontend posílá data zprávou
+\texttt{dm\_send\_message}, backend odpovídá zprávou \texttt{dm\_receive\_message}.
+Nad tímto kanálem je definován jednoduchý aplikační protokol (tabulka~\ref{tab:proto}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Směr} & \textbf{Typ zprávy} & \textbf{Význam} \\
+\midrule
+FE\,$\to$\,BE & \texttt{set\_recipe}      & nahrání textu receptu \\
+FE\,$\to$\,BE & \texttt{user\_text}       & napsaná zpráva uživatele \\
+FE\,$\to$\,BE & \texttt{set\_voice\_mode} & zapnutí/vypnutí hlasového režimu \\
+FE\,$\to$\,BE & \texttt{reset}            & vymazání konverzace \\
+BE\,$\to$\,FE & \texttt{assistant}        & odpověď asistenta \\
+BE\,$\to$\,FE & \texttt{user\_speech}     & přepis rozpoznané řeči \\
+BE\,$\to$\,FE & \texttt{recipe\_loaded}   & strukturovaný recept \\
+BE\,$\to$\,FE & \texttt{progress}         & aktuální krok / počet kroků \\
+BE\,$\to$\,FE & \texttt{status}           & stav (přemýšlím/mluvím/poslouchám) \\
+\bottomrule
+\end{tabular}
+\caption{Aplikační protokol mezi frontendem (FE) a backendem (BE).}
+\label{tab:proto}
+\end{table}
+
+% =====================================================================
+\section{Implementace}
+% =====================================================================
+Projekt je členěn do několika souborů:
+\begin{itemize}[noitemsep]
+  \item \texttt{app.py} -- dialogový manažer \texttt{KitchenDialog} a spuštění serveru,
+  \item \texttt{recipe.py} -- parsování receptu, RAG a sledování kroků,
+  \item \texttt{config.py} -- konfigurace (server, model, hlas, port),
+  \item \texttt{dialog.py} -- framework SpeechCloud (z materiálů předmětu),
+  \item \texttt{\_event\_emitter.py} -- záložní EventEmitter,
+  \item \texttt{static/} -- frontend (\texttt{index.html}, \texttt{style.css}, \texttt{app.js}).
+\end{itemize}
+
+\subsection{Dialogový manažer a souběžnost}
+Jádrem backendu je třída \texttt{KitchenDialog} dědící z \texttt{Dialog}. Její hlavní
+smyčka musí současně reagovat na dvě události: příchod zprávy z webu (text, příkaz)
+\emph{a} rozpoznání řeči. Řeší to souběžným čekáním na obě úlohy pomocí
+\texttt{asyncio.wait} s návratem při první dokončené úloze. Rozpoznávání se spouští
+jen v hlasovém režimu a jen tehdy, když asistent zrovna nemluví ani nepřemýšlí
+(příznak \texttt{busy}), aby neslyšel sám sebe.
+
+\begin{lstlisting}[language=Python,caption={Hlavní smyčka -- souběžné čekání na text i řeč.}]
+self._msg_task = asyncio.ensure_future(self.pop_message())
+while True:
+    tasks = {self._msg_task}
+    if self.voice_mode and not self.busy:
+        if self._asr_task is None:
+            self._asr_task = asyncio.ensure_future(
+                self.recognize_and_wait_for_asr_result(timeout=config.ASR_TIMEOUT))
+        tasks.add(self._asr_task)
+
+    done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+    if self._msg_task in done:                 # přišla zpráva z webu
+        msg = self._msg_task.result()
+        self._msg_task = asyncio.ensure_future(self.pop_message())
+        await self.handle_message(msg)
+
+    if self._asr_task is not None and self._asr_task in done:  # rozpoznaná řeč
+        result = self._asr_task.result()
+        self._asr_task = None
+        await self.handle_voice_result(result)
+\end{lstlisting}
+
+\subsection{Parsování receptu (strukturovaný výstup)}
+Recept se zpracovává jediným voláním LLM s vynuceným JSON schématem
+(\texttt{title}, \texttt{ingredients}, \texttt{steps}). Systémový prompt modelu
+ukládá rozdělit dlouhá souvětí na samostatné, jednotlivě proveditelné kroky -- to je
+klíčové pro pozdější krokování. Pokud by volání LLM selhalo, použije se deterministický
+záložní parser (dělení podle nadpisů „Suroviny`` / „Postup`` a číslování), takže
+funkce vrátí použitelný výsledek vždy.
+
+\begin{lstlisting}[language=Python,caption={JSON schéma pro strukturovaný výstup parsování.}]
+RECIPE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title":       {"type": "string"},
+        "ingredients": {"type": "array", "items": {"type": "string"}},
+        "steps":       {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["title", "ingredients", "steps"],
+}
+\end{lstlisting}
+
+\subsection{RAG nad receptem}
+Třída \texttt{RecipeRAG} rozdělí recept na úseky (blok surovin a každý krok zvlášť),
+pro každý spočítá embedding modelem \texttt{qwen3-embedding} a uloží jej. Při dotazu
+se spočítá embedding dotazu a kosinovou podobností se vyberou nejrelevantnější úseky.
+Když embeddingy nejsou dostupné, systém se elegantně přepne na vyhledávání podle
+překryvu klíčových slov -- aplikace tedy funguje i bez embeddingové služby.
+
+\begin{lstlisting}[language=Python,caption={Vyhledání relevantních úseků receptu.}]
+def retrieve(self, query, k=3):
+    if self.use_embeddings:
+        qvec = self.client.embed(model=self.embed_model, input=[query])["embeddings"][0]
+        scored = [(_cosine(qvec, v), c) for v, c in zip(self.vectors, self.chunks)]
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [c for _, c in scored[:k]]
+    return self._keyword_retrieve(query, k)   # záloha bez embeddingů
+\end{lstlisting}
+
+\subsection{Deterministické sledování kroků}
+Pozici v receptu drží třída \texttt{RecipeState} jako index do seznamu kroků. Navigace
+(\texttt{start}, \texttt{next}, \texttt{previous}, \texttt{goto}) je ošetřena tak, aby
+index nikdy nevypadl z platného rozsahu. Díky tomu je posun mezi kroky zcela
+předvídatelný a nezávislý na „náladě`` jazykového modelu -- to je odpověď na požadavek,
+aby se asistent v krocích neztratil.
+
+\begin{lstlisting}[language=Python,caption={Bezpečná navigace nad stavem postupu.}]
+def next(self):
+    if not self.steps:
+        return None
+    if self.index < self.total - 1:   # nikdy nepřekročíme poslední krok
+        self.index += 1
+    return self.current_text()
+
+def goto(self, number):               # 1-based číslo kroku od uživatele
+    if not self.steps:
+        return None
+    self.index = max(0, min(self.total - 1, number - 1))
+    return self.current_text()
+\end{lstlisting}
+
+\subsection{Klasifikace záměru}
+Každá promluva uživatele se zařadí do jednoho ze záměrů: \texttt{start}, \texttt{next},
+\texttt{previous}, \texttt{repeat}, \texttt{goto}, \texttt{ingredients}, \texttt{finish}
+nebo \texttt{question}. Pro běžné krátké příkazy („dál``, „co dál``, „zopakuj`` $\dots$)
+se použije \emph{rychlá cesta} bez LLM -- okamžitě a spolehlivě. Delší či nejednoznačné
+promluvy klasifikuje LLM se strukturovaným výstupem. Záměr \texttt{question} spustí RAG
+a vygenerování odpovědi; navigační záměry jen deterministicky posunou stav a přečtou
+příslušný krok.
+
+\begin{lstlisting}[language=Python,caption={Rychlá klasifikace běžných příkazů (zkráceno).}]
+_QUICK_INTENTS = {
+    "next":     ["další", "dál", "co dál", "pokračuj", "hotovo", ...],
+    "previous": ["zpět", "předchozí", "vrať se", ...],
+    "repeat":   ["zopakuj", "co teď", "znovu", ...],
+    "start":    ["začni", "pojďme na to", "start", ...],
+    ...
+}
+\end{lstlisting}
+
+\subsection{Frontend}
+Rozhraní je inspirováno konverzačními asistenty. Hlavní obrazovku tvoří chat
+s polem pro psaní a postranní panel se strukturou receptu, v němž je zvýrazněn
+aktuální krok a zobrazen ukazatel postupu. Tlačítkem mikrofonu lze přejít do
+\emph{hlasového režimu} -- celoobrazovkového overlaye s animovaným indikátorem stavu
+(poslouchám / přemýšlím / mluvím), živým přepisem řeči a přehledem konverzace.
+O přehrávání syntézy a zachytávání mikrofonu se stará klient SpeechCloud; veškerá
+další logika běží ve skriptu \texttt{app.js}.
+
+% =====================================================================
+\section{Použité technologie a konfigurace}
+% =====================================================================
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Komponenta} & \textbf{Technologie} \\
+\midrule
+Webový server / WS    & Python, Tornado (\texttt{dialog.py}) \\
+ASR + TTS             & SpeechCloud (\texttt{speechcloud-3.0.js}) \\
+LLM                   & Ollama, model \texttt{gemma3:12b} \\
+Embeddingy (RAG)      & Ollama, model \texttt{qwen3-embedding} \\
+Frontend              & HTML5, CSS3, JavaScript, jQuery \\
+\bottomrule
+\end{tabular}
+\caption{Přehled použitých technologií.}
+\end{table}
+
+Veškeré nastavení (adresa a přihlašovací údaje k Ollamě, název modelu, hlas pro TTS,
+port serveru) je soustředěno v souboru \texttt{config.py}, takže se dá snadno změnit
+na jednom místě.
+
+% =====================================================================
+\section{Spuštění a ovládání}
+% =====================================================================
+\subsection{Instalace a spuštění}
+\begin{lstlisting}[caption={Instalace závislostí a spuštění serveru.}]
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python app.py
+# v prohlížeči otevřít:  http://localhost:8888/static/index.html
+\end{lstlisting}
+Hlasový režim vyžaduje mikrofon a kontext \texttt{localhost} (nebo HTTPS), jinak
+prohlížeč přístup k mikrofonu zablokuje.
+
+\subsection{Ovládání}
+\begin{enumerate}[noitemsep]
+  \item Tlačítkem \emph{Nahrát recept} se vloží text receptu (nebo ukázka).
+  \item V chatu lze psát příkazy (\emph{začni}, \emph{další}, \emph{zpět},
+        \emph{zopakuj}, \emph{krok tři}, \emph{suroviny}) i volné dotazy
+        (\emph{kolik mouky?}, \emph{čím nahradit máslo?}).
+  \item Ikonou mikrofonu se zapne hlasový režim -- stejné příkazy lze říkat.
+\end{enumerate}
+
+% =====================================================================
+\section{Příklad interakce}
+% =====================================================================
+\begin{quote}\small
+\textbf{Asistent:} Načetl jsem recept Palačinky. Má 11 kroků a 6 surovin. Až budete
+chtít, řekněte „začni``.\\
+\textbf{Uživatel:} Začni.\\
+\textbf{Asistent:} Do mísy prosejte mouku a přidejte špetku soli a cukr.\\
+\textbf{Uživatel:} Kolik mléka tam dám?\\
+\textbf{Asistent:} Podle receptu celkem 500 ml; nejdřív přilijte zhruba polovinu.\\
+\textbf{Uživatel:} Co dál?\\
+\textbf{Asistent:} Rozklepněte vejce a přilijte zhruba polovinu mléka.
+\end{quote}
+Ukázka demonstruje, že dotaz mimo postup (množství mléka) nezmění pozici v receptu --
+po „co dál`` asistent korektně pokračuje dalším krokem.
+
+% =====================================================================
+\section{Diskuse a možná rozšíření}
+% =====================================================================
+Oddělení rozhodnutí o záměru od provedení navigace se ukázalo jako zásadní pro
+spolehlivost -- asistent se v krocích neztrácí ani při delších konverzacích. Mezi
+omezení patří závislost na dostupnosti vzdálených služeb (SpeechCloud, Ollama) a
+ukončení relace SpeechCloud při delší nečinnosti, které aplikace řeší nabídkou
+opětovného připojení.
+
+Možná rozšíření:
+\begin{itemize}[noitemsep]
+  \item časovače pro kroky s definovanou dobou (např. „peče se 20 minut``),
+  \item přepočet množství surovin podle počtu porcí,
+  \item podpora více receptů a jejich kombinování,
+  \item perzistentní RAG databáze (např. FAISS) sdílená mezi relacemi.
+\end{itemize}
+
+% =====================================================================
+\section{Závěr}
+% =====================================================================
+Cílem práce bylo vytvořit funkčního hlasového kuchyňského asistenta, který uživatele
+spolehlivě provede receptem. Výsledná aplikace splňuje všechny stanovené požadavky:
+přijme a strukturalizuje recept, uloží jej do RAG databáze, provází uživatele krok za
+krokem s deterministickým udržením pozice a umožňuje ovládání psaním i hlasem v
+příjemném moderním rozhraní. Práce zároveň ukázala, jak vhodně zkombinovat velký
+jazykový model s jednoduchou, ale spolehlivou stavovou logikou tak, aby výsledek byl
+robustní i prakticky použitelný.
+
+% =====================================================================
+\begin{thebibliography}{9}
+\bibitem{speechcloud} Katedra kybernetiky ZČU. \emph{SpeechCloud -- platforma pro ASR a TTS}. Plzeň.
+\bibitem{ollama} Ollama. \emph{Run large language models locally}. \url{https://ollama.com}.
+\bibitem{rag} Lewis, P. et al. \emph{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. 2020.
+\bibitem{tornado} \emph{Tornado Web Framework}. \url{https://www.tornadoweb.org}.
+\end{thebibliography}
+
+\end{document}

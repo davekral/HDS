@@ -1,0 +1,15 @@
+# Hlasový kuchyňský asistent – závislosti
+#
+# Instalace (doporučeno ve virtuálním prostředí):
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip install -r requirements.txt
+
+tornado>=6.0
+ollama>=0.3.0
+httpx>=0.24
+
+# Poznámka: framework SpeechCloud (dialog.py) používá EventEmitter z balíčku
+# "event_emitter" dodávaného v materiálech předmětu HDS. Pokud ho nemáte,
+# aplikace automaticky použije přiloženou zálohu (_event_emitter.py), takže
+# žádný další balíček není potřeba.
