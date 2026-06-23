@@ -162,18 +162,6 @@ Hlasový kuchyňský asistent/
 | `SERVER_PORT`     | Port webového serveru                               |
 
 > Adresa SpeechCloud je kvůli načítání knihovny v prohlížeči uvedena i ve
-> `static/app.js` (proměnná `SPEECHCLOUD_URI`). Pokud ji měníte, upravte ji na
-> obou místech.
+> `static/app.js` (proměnná `SPEECHCLOUD_URI`).
 
----
 
-## Řešení potíží
-
-- **„připojuji…“ se nezmění na „připraveno“** – zkontrolujte dostupnost
-  SpeechCloud serveru a že stránku otevíráte přes `localhost` (kvůli mikrofonu).
-- **Asistent nereaguje na hlas** – povolte v prohlížeči přístup k mikrofonu a
-  ujistěte se, že jste v hlasovém režimu (ikona 🎤 svítí).
-- **Chyba u modelu / parsování receptu** – ověřte přihlašovací údaje a název
-  modelu v `config.py`; recept lze i tak ovládat, použije se záložní parser.
-- **Asistent mluví anglicky** – zkuste jiný model (`gemma3:12b` zvládá češtinu
-  dobře); odpovědi jsou systémovým promptem vynuceny v češtině.
