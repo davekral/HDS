@@ -63,8 +63,7 @@ předmětu je volitelný — pokud chybí, použije se přiložená záloha
 `_event_emitter.py`.
 
 > **Přihlašovací údaje a modely** se nastavují v `config.py` (Ollama server,
-> uživatel/heslo, model, hlas pro TTS). Výchozí hodnoty míří na školní server
-> KKY a používají model `gemma3:12b` a embeddingy `qwen3-embedding`.
+> uživatel/heslo, model, hlas pro TTS).
 
 ---
 
